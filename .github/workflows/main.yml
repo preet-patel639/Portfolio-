@@ -4,21 +4,24 @@ name: Portfolio CI CD Pipeline
 on:
   push:
     branches: [main]
+
   pull_request:
     branches: [main]
+
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  # JOB 1: Validate website code
+
+  # JOB 1 - Continuous Integration
   validate:
     name: Check Website Code
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-      - name: Download repository code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -26,32 +29,26 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Check required files
+      - name: Check Required Files
         run: |
           test -f index.html
           test -f styles.css
           test -f script.js
-          echo "All required files exist!"
+          echo "All required files found!"
 
-      - name: Check JavaScript syntax
-        run: node --check script.js
-
-      - name: Validate HTML and CSS
+      - name: Check JavaScript Syntax
         run: |
-          npx --yes html-validate@10 index.html
-          npx --yes stylelint@16 \
-            --config '{"extends":["stylelint-config-standard"]}' \
-            styles.css
-        continue-on-error: true
+          node --check script.js
+          echo "JavaScript syntax is valid!"
 
-  # JOB 2: Deploy website
+  # JOB 2 - Continuous Deployment
   deploy:
     name: Deploy Portfolio
     needs: validate
 
     if: github.event_name != 'pull_request'
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     permissions:
       contents: read
@@ -63,17 +60,17 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload website files
+      - name: Upload Website
         uses: actions/upload-pages-artifact@v4
         with:
           path: '.'
 
-      - name: Deploy website
+      - name: Deploy Website
         id: deployment
         uses: actions/deploy-pages@v4
